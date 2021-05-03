@@ -361,6 +361,7 @@ static void update_extras(UIState *s)
         int touched = touch_poll(&(s->touch), &touch_x, &touch_y, 0);
         dashcam(s, touch_x, touch_y);
    }
+}
 
 QUIState::QUIState(QObject *parent) : QObject(parent) {
   ui_state.sound = std::make_unique<Sound>();

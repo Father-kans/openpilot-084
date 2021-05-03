@@ -61,9 +61,9 @@ SignalWidget::SignalWidget(QString text, int strength, QWidget* parent) : QFrame
 
   label.setText(text);
   layout.addWidget(&label, 0, Qt::AlignLeft);
-  label.setStyleSheet(R"(font-size: 35px; font-weight: 400;)");
+  label.setStyleSheet(R"(font-size: 32px; font-weight: 400;)");
 
-  setFixedWidth(177);
+  setFixedWidth(210);
   setLayout(&layout);
 }
 

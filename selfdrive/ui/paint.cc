@@ -103,6 +103,11 @@ static void draw_lead(UIState *s, int idx) {
     color = nvgRGBA(112, 128, 255, 255);
 
   draw_chevron(s, x, y, sz, nvgRGBA(201, 34, 49, fillAlpha), color);
+
+  if(lead.getRadar()) {
+    nvgTextAlign(s->vg, NVG_ALIGN_CENTER | NVG_ALIGN_MIDDLE);
+    ui_draw_text(s, x, y + sz/2.f, "R", 18 * 2.5, COLOR_WHITE, "sans-semibold");
+  }
 }
 
 static void ui_draw_line(UIState *s, const line_vertices_data &vd, NVGcolor *color, NVGpaint *paint) {
@@ -231,12 +236,12 @@ static void bb_ui_draw_basic_info(UIState *s)
     y += height;
     y += height;
 
-    snprintf(str, sizeof(str), "Steer Angle: %.1f¡Æ", s->scene.controls_state.getAngleSteers());
+    snprintf(str, sizeof(str), "Steer Angle: %.1fÂ°", s->scene.controls_state.getAngleSteers());
     ui_draw_text(s, x-200, y, str, 25 * 2.5, textColor, "sans-regular");
     y += height;
 
     if (scene->controls_state.getEnabled()) {
-      snprintf(str, sizeof(str), "Path Angle: %.1f¡Æ", s->scene.controls_state.getSteeringAngleDesiredDeg());
+      snprintf(str, sizeof(str), "Path Angle: %.1fÂ°", s->scene.controls_state.getSteeringAngleDesiredDeg());
     } else {
       snprintf(str, sizeof(str), "N/A");
     }
@@ -246,7 +251,7 @@ static void bb_ui_draw_basic_info(UIState *s)
     if (scene->lead_data[0].getStatus()) {
       snprintf(str, sizeof(str), "Lead Car: %d m", (int)scene->lead_data[0].getDRel());
     } else {
-      snprintf(str, sizeof(str), "¾ÕÂ÷:--");
+      snprintf(str, sizeof(str), "ì•žì°¨:--");
     }
     ui_draw_text(s, x-200, y, str, 25 * 2.5, textColor, "sans-regular");
 }
@@ -306,11 +311,11 @@ static void bb_ui_draw_debug(UIState *s)
     ui_draw_text(s, text_x2, y2, str, 25 * 2.5, textColor2, "sans-regular");
     y2 += height2;
 
-    snprintf(str, sizeof(str), "CPU Temp: %.0f¡ÆC", (round((s->scene.cpuTemp))));
+    snprintf(str, sizeof(str), "CPU Temp: %.0fÂ°C", (round((s->scene.cpuTemp))));
     ui_draw_text(s, text_x2, y2, str, 25 * 2.5, textColor, "sans-regular");
     y2 += height2;
 
-    snprintf(str, sizeof(str), "Batt Temp: %.0f¡ÆC", scene->deviceState.getBatteryTempC());
+    snprintf(str, sizeof(str), "Batt Temp: %.0fÂ°C", scene->deviceState.getBatteryTempC());
     ui_draw_text(s, text_x2, y2, str, 25 * 2.5, textColor, "sans-regular");
     y2 += height2;
 
