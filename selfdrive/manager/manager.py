@@ -2,9 +2,9 @@
 import datetime
 import os
 import signal
-import subprocess
 import sys
 import traceback
+from multiprocessing import Process
 
 import cereal.messaging as messaging
 import selfdrive.crash as crash
@@ -12,15 +12,16 @@ from common.basedir import BASEDIR
 from common.params import Params
 from common.text_window import TextWindow
 from selfdrive.boardd.set_time import set_time
-from selfdrive.hardware import HARDWARE, PC, TICI
+from selfdrive.hardware import HARDWARE, TICI, PC
 from selfdrive.manager.helpers import unblock_stdout
-from selfdrive.manager.process import ensure_running
+from selfdrive.manager.process import ensure_running, launcher
 from selfdrive.manager.process_config import managed_processes
 from selfdrive.athena.registration import register
 from selfdrive.swaglog import cloudlog, add_file_handler
 from selfdrive.version import dirty, get_git_commit, version, origin, branch, commit, \
                               terms_version, training_version, \
                               get_git_branch, get_git_remote
+from selfdrive.hardware.eon.apk import system
 
 def manager_init():
 
@@ -35,6 +36,7 @@ def manager_init():
     ("HasAcceptedTerms", "0"),
     ("LastUpdateTime", datetime.datetime.utcnow().isoformat().encode('utf8')),
     ("OpenpilotEnabledToggle", "1"),
+    ("IsMetric", "1"),
   ]
 
   if TICI:
@@ -108,11 +110,16 @@ def manager_cleanup():
 
 
 def manager_thread():
+
+  Process(name="shutdownd", target=launcher, args=("selfdrive.shutdownd",)).start()
+  system("am startservice com.neokii.optool/.MainService")
+  system("am startservice com.neokii.openpilot/.MainService")
+
   cloudlog.info("manager start")
   cloudlog.info({"environ": os.environ})
 
   # save boot log
-  subprocess.call("./bootlog", cwd=os.path.join(BASEDIR, "selfdrive/loggerd"))
+  #subprocess.call("./bootlog", cwd=os.path.join(BASEDIR, "selfdrive/loggerd"))
 
   params = Params()
 

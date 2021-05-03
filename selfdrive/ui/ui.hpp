@@ -25,6 +25,8 @@
 #include <QObject>
 #include <QTimer>
 
+#include "common/touch.h"
+
 #define COLOR_BLACK nvgRGBA(0, 0, 0, 255)
 #define COLOR_BLACK_ALPHA(x) nvgRGBA(0, 0, 0, x)
 #define COLOR_WHITE nvgRGBA(255, 255, 255, 255)
@@ -32,6 +34,10 @@
 #define COLOR_RED_ALPHA(x) nvgRGBA(201, 34, 49, x)
 #define COLOR_YELLOW nvgRGBA(218, 202, 37, 255)
 #define COLOR_RED nvgRGBA(201, 34, 49, 255)
+#define COLOR_OCHRE nvgRGBA(218, 111, 37, 255)
+#define COLOR_GREEN_ALPHA(x) nvgRGBA(0, 255, 0, x)
+#define COLOR_BLUE_ALPHA(x) nvgRGBA(0, 0, 255, x)
+
 
 typedef struct Rect {
   int x, y, w, h;
@@ -45,6 +51,7 @@ typedef struct Rect {
 } Rect;
 
 const int bdr_s = 30;
+const int bdr_is = 30;
 const int header_h = 420;
 const int footer_h = 280;
 
@@ -88,6 +95,19 @@ typedef struct UIScene {
 
   bool is_rhd;
   bool driver_view;
+  bool brakeLights;
+  float steeringTorqueEps;
+
+  float angleSteers;
+  int engineRPM;
+  bool recording;
+
+  int lead_status;
+  float lead_d_rel, lead_v_rel;
+
+  float cpuTemp;
+  int cpuPerc;
+  int cpuUsagePercent;
 
   std::string alert_text1;
   std::string alert_text2;
@@ -106,6 +126,7 @@ typedef struct UIScene {
   cereal::DriverMonitoringState::Reader dmonitoring_state;
 
   // gps
+  float gpsAccuracy;
   int satelliteCount;
   bool gpsOK;
 
@@ -122,6 +143,14 @@ typedef struct UIScene {
   float light_sensor, accel_sensor, gyro_sensor;
   bool started, ignition, is_metric, longitudinal_control, end_to_end;
   uint64_t started_frame;
+  
+  // neokii dev UI
+  cereal::CarControl::Reader car_control;
+  cereal::LateralPlan::Reader lateral_plan;
+  cereal::CarParams::Reader car_params;
+  cereal::GpsLocationData::Reader gps_ext;
+  cereal::LiveParametersData::Reader live_params;
+  
 } UIScene;
 
 typedef struct UIState {
@@ -158,6 +187,10 @@ typedef struct UIState {
   float car_space_transform[6];
   bool wide_camera;
   float zoom;
+
+  //
+  TouchState touch;
+
 } UIState;
 
 

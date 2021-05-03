@@ -163,6 +163,12 @@ void Sidebar::update(const UIState &s){
       {cereal::DeviceState::NetworkStrength::GOOD, 4},
       {cereal::DeviceState::NetworkStrength::GREAT, 5}};
   const int img_idx = s.scene.deviceState.getNetworkType() == cereal::DeviceState::NetworkType::NONE ? 0 : network_strength_map[s.scene.deviceState.getNetworkStrength()];
+
+  if(s.scene.deviceState.getNetworkType() == cereal::DeviceState::NetworkType::WIFI) {
+    std::string ip = s.scene.deviceState.getWifiIpAddress();
+    network_type = ip.c_str();
+  }
+
   signal->update(network_type, img_idx);
 
   QColor panda_color = COLOR_GOOD;
