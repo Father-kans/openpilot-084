@@ -94,7 +94,6 @@ class CarState(CarStateBase):
     self.lkas_status = pt_cp.vl["PSCMStatus"]['LKATorqueDeliveredStatus']
     ret.steerWarning = self.lkas_status not in [0, 1]
 
-    ret.steeringTorqueEps = pt_cp.vl["PSCMStatus"]['LKATorqueDelivered']
     self.engineRPM = pt_cp.vl["ECMEngineStatus"]['EngineRPM']
     # bellow line for Brake Light	
     ret.brakeLights = ch_cp.vl["EBCMFrictionBrakeStatus"]["FrictionBrakePressure"] != 0 or ret.brakePressed
@@ -146,32 +145,15 @@ class CarState(CarStateBase):
       ("VehicleSpeed", "ECMVehicleSpeed", 0),
     ]
 
-    checks = [
-      ("BCMTurnSignals", 1),
-      ("ECMPRDNL", 10),
-      ("PSCMStatus", 10),
-      ("ESPStatus", 10),
-      ("BCMDoorBeltStatus", 10),
-      ("EPBStatus", 20),
-      ("EBCMWheelSpdFront", 20),
-      ("EBCMWheelSpdRear", 20),
-      ("AcceleratorPedal", 33),
-      ("AcceleratorPedal2", 33),
-      ("ASCMSteeringButton", 33),
-      ("ECMEngineStatus", 100),
-      ("PSCMSteeringAngle", 100),
-      ("EBCMBrakePedalPosition", 100),
-    ]
+    checks = []
 
     if CP.carFingerprint == CAR.VOLT:
       signals += [
         ("RegenPaddle", "EBCMRegenPaddle", 0),
       ]
-      checks += [
-        ("EBCMRegenPaddle", 50),
-      ]
+      checks += []
 
-    return CANParser(DBC[CP.carFingerprint]['pt'], signals, checks, CanBus.POWERTRAIN)
+    return CANParser(DBC[CP.carFingerprint]['pt'], signals, checks, CanBus.POWERTRAIN, enforce_checks=False)
 
 # all bellows are for Brake Light
   @staticmethod
@@ -181,5 +163,5 @@ class CarState(CarStateBase):
       # sig_name, sig_address, default
       ("FrictionBrakePressure", "EBCMFrictionBrakeStatus", 0),
     ]
-
-    return CANParser(DBC[CP.carFingerprint]['chassis'], signals, [], CanBus.CHASSIS)
+    checks = []
+    return CANParser(DBC[CP.carFingerprint]['chassis'], signals, checks, CanBus.CHASSIS, enforce_checks=False)
