@@ -291,7 +291,7 @@ struct DeviceState @0xa4d8b5af2aa492eb {
 
   # power
   batteryPercent @8 :Int16;
-  batteryStatus @9 :Text;
+  batteryStatus @9 :BatteryStatus;
   batteryCurrent @15 :Int32;
   batteryVoltage @16 :Int32;
   chargingError @17 :Bool;
@@ -304,6 +304,11 @@ struct DeviceState @0xa4d8b5af2aa492eb {
   batteryTempC @29 :Float32;
   ambientTempC @30 :Float32;
   thermalStatus @14 :ThermalStatus;
+
+  enum BatteryStatus {
+    charging @0;
+    discharging @1;
+  }
 
   enum ThermalStatus {
     green @0;
