@@ -20,8 +20,12 @@
 #include "visionipc.h"
 #include "visionipc_client.h"
 
+#include "qt/sound.h"
+
 #include <QObject>
 #include <QTimer>
+
+#include "common/touch.h"
 
 #define COLOR_BLACK nvgRGBA(0, 0, 0, 255)
 #define COLOR_BLACK_ALPHA(x) nvgRGBA(0, 0, 0, x)
@@ -30,6 +34,10 @@
 #define COLOR_RED_ALPHA(x) nvgRGBA(201, 34, 49, x)
 #define COLOR_YELLOW nvgRGBA(218, 202, 37, 255)
 #define COLOR_RED nvgRGBA(201, 34, 49, 255)
+#define COLOR_OCHRE nvgRGBA(218, 111, 37, 255)
+#define COLOR_GREEN_ALPHA(x) nvgRGBA(0, 255, 0, x)
+#define COLOR_BLUE_ALPHA(x) nvgRGBA(0, 0, 255, x)
+
 
 typedef struct Rect {
   int x, y, w, h;
@@ -42,7 +50,9 @@ typedef struct Rect {
   }
 } Rect;
 
+const int sbr_w = 300;
 const int bdr_s = 30;
+const int bdr_is = 30;
 const int header_h = 420;
 const int footer_h = 280;
 
@@ -55,6 +65,7 @@ typedef enum NetStatus {
 } NetStatus;
 
 typedef enum UIStatus {
+  STATUS_OFFROAD,
   STATUS_DISENGAGED,
   STATUS_ENGAGED,
   STATUS_WARNING,
@@ -62,8 +73,10 @@ typedef enum UIStatus {
 } UIStatus;
 
 static std::map<UIStatus, NVGcolor> bg_colors = {
+  {STATUS_OFFROAD, nvgRGBA(0x0, 0x0, 0x0, 0xff)},
   {STATUS_DISENGAGED, nvgRGBA(0x17, 0x33, 0x49, 0xc8)},
   {STATUS_ENGAGED, nvgRGBA(0x17, 0x86, 0x44, 0xf1)},
+  //{STATUS_ENGAGED, nvgRGBA(0x02, 0x70, 0xB9, 0xf1)},
   {STATUS_WARNING, nvgRGBA(0xDA, 0x6F, 0x25, 0xf1)},
   {STATUS_ALERT, nvgRGBA(0xC9, 0x22, 0x31, 0xf1)},
 };
@@ -84,6 +97,25 @@ typedef struct UIScene {
 
   bool is_rhd;
   bool driver_view;
+  bool brakeLights;
+  float steeringTorqueEps;
+
+  float angleSteers;
+  int engineRPM;
+  bool recording;
+
+  int lead_status;
+  float lead_d_rel, lead_v_rel;
+
+  float cpuTemp;
+  int cpuPerc;
+  int cpuUsagePercent;
+
+  std::string alert_text1;
+  std::string alert_text2;
+  std::string alert_type;
+  float alert_blinking_rate;
+  cereal::ControlsState::AlertSize alert_size;
 
   cereal::PandaState::PandaType pandaType;
   NetStatus athenaStatus;
@@ -94,8 +126,10 @@ typedef struct UIScene {
   cereal::ControlsState::Reader controls_state;
   cereal::DriverState::Reader driver_state;
   cereal::DriverMonitoringState::Reader dmonitoring_state;
+  cereal::ModelDataV2::Reader model;
 
   // gps
+  float gpsAccuracy;
   int satelliteCount;
   bool gpsOK;
 
@@ -112,6 +146,14 @@ typedef struct UIScene {
   float light_sensor, accel_sensor, gyro_sensor;
   bool started, ignition, is_metric, longitudinal_control, end_to_end;
   uint64_t started_frame;
+  
+  // neokii dev UI
+  cereal::CarControl::Reader car_control;
+  cereal::LateralPlan::Reader lateral_plan;
+  cereal::CarParams::Reader car_params;
+  cereal::GpsLocationData::Reader gps_ext;
+  cereal::LiveParametersData::Reader live_params;
+  
 } UIScene;
 
 typedef struct UIState {
@@ -131,6 +173,7 @@ typedef struct UIState {
 
   std::unique_ptr<SubMaster> sm;
 
+  std::unique_ptr<Sound> sound;
   UIStatus status;
   UIScene scene;
 
@@ -141,12 +184,17 @@ typedef struct UIState {
   GLuint frame_vao[2], frame_vbo[2], frame_ibo[2];
   mat4 rear_frame_mat, front_frame_mat;
 
+  // device state
   bool awake;
 
   Rect video_rect, viz_rect;
   float car_space_transform[6];
   bool wide_camera;
   float zoom;
+
+  //
+  TouchState touch;
+
 } UIState;
 
 

@@ -12,6 +12,7 @@
 #include "ui.h"
 #include "paint.h"
 #include "qt_window.h"
+#include "dashcam.h"
 
 #define BACKLIGHT_DT 0.25
 #define BACKLIGHT_TS 2.00
@@ -131,9 +132,12 @@ static void update_state(UIState *s) {
   UIScene &scene = s->scene;
   if (scene.started && sm.updated("controlsState")) {
     scene.controls_state = sm["controlsState"].getControlsState();
+    s->scene.angleSteers  = scene.controls_state.getAngleSteers();
   }
   if (sm.updated("carState")) {
     scene.car_state = sm["carState"].getCarState();
+    s->scene.brakeLights = scene.car_state.getBrakeLights();
+    s->scene.engineRPM = scene.car_state.getEngineRPM();
   }
   if (sm.updated("radarState")) {
     std::optional<cereal::ModelDataV2::XYZTData::Reader> line;
@@ -164,6 +168,8 @@ static void update_state(UIState *s) {
   }
   if (sm.updated("deviceState")) {
     scene.deviceState = sm["deviceState"].getDeviceState();
+    scene.cpuTemp = scene.deviceState.getCpuTempC()[0];
+    scene.cpuPerc = scene.deviceState.getCpuUsagePercent();
   }
   if (sm.updated("pandaState")) {
     auto pandaState = sm["pandaState"].getPandaState();
@@ -178,10 +184,22 @@ static void update_state(UIState *s) {
       scene.satelliteCount = data.getMeasurementReport().getNumMeas();
     }
   }
+
+  if (sm.updated("gpsLocationExternal")) {
+    auto data = sm["gpsLocationExternal"].getGpsLocationExternal();
+    s->scene.gpsAccuracy = data.getAccuracy();
+
+    if (s->scene.gpsAccuracy > 100)
+      s->scene.gpsAccuracy = 99.99;
+    else if (s->scene.gpsAccuracy == 0)
+      s->scene.gpsAccuracy = 99.8;
+  }  
+  
   if (sm.updated("liveLocationKalman")) {
     scene.gpsOK = sm["liveLocationKalman"].getLiveLocationKalman().getGpsOK();
   }
   if (sm.updated("carParams")) {
+    scene.car_params = sm["carParams"].getCarParams();
     scene.longitudinal_control = sm["carParams"].getCarParams().getOpenpilotLongitudinalControl();
   }
   if (sm.updated("driverState")) {
@@ -217,6 +235,47 @@ static void update_state(UIState *s) {
   }
 #endif
   scene.started = scene.deviceState.getStarted() || scene.driver_view;
+}
+
+static void update_alert(UIState *s) {
+  UIScene &scene = s->scene;
+  if (s->sm->updated("controlsState")) {
+    auto alert_sound = scene.controls_state.getAlertSound();
+    if (scene.alert_type.compare(scene.controls_state.getAlertType()) != 0) {
+      if (alert_sound == AudibleAlert::NONE) {
+        s->sound->stop();
+      } else {
+        s->sound->play(alert_sound);
+      }
+    }
+    scene.alert_text1 = scene.controls_state.getAlertText1();
+    scene.alert_text2 = scene.controls_state.getAlertText2();
+    scene.alert_size = scene.controls_state.getAlertSize();
+    scene.alert_type = scene.controls_state.getAlertType();
+    scene.alert_blinking_rate = scene.controls_state.getAlertBlinkingRate();
+  }
+
+  // Handle controls timeout
+  if (scene.deviceState.getStarted() && (s->sm->frame - scene.started_frame) > 10 * UI_FREQ) {
+    const uint64_t cs_frame = s->sm->rcv_frame("controlsState");
+    if (cs_frame < scene.started_frame) {
+      // car is started, but controlsState hasn't been seen at all
+      scene.alert_text1 = "openpilot Unavailable";
+      scene.alert_text2 = "Waiting for controls to start";
+      scene.alert_size = cereal::ControlsState::AlertSize::MID;
+    } else if ((s->sm->frame - cs_frame) > 5 * UI_FREQ) {
+      // car is started, but controls is lagging or died
+      if (scene.alert_text2 != "Controls Unresponsive") {
+        s->sound->play(AudibleAlert::CHIME_WARNING_REPEAT);
+        LOGE("Controls unresponsive");
+      }
+
+      scene.alert_text1 = "TAKE CONTROL IMMEDIATELY";
+      scene.alert_text2 = "Controls Unresponsive";
+      scene.alert_size = cereal::ControlsState::AlertSize::FULL;
+      s->status = STATUS_ALERT;
+    }
+  }
 }
 
 static void update_params(UIState *s) {
@@ -273,27 +332,52 @@ static void update_status(UIState *s) {
 
       s->scene.is_rhd = Params().getBool("IsRHD");
       s->scene.end_to_end = Params().getBool("EndToEndToggle");
+      s->scene.alert_size = cereal::ControlsState::AlertSize::NONE;
       s->vipc_client = s->scene.driver_view ? s->vipc_client_front : s->vipc_client_rear;
     } else {
+      s->status = STATUS_OFFROAD;
+      s->sound->stop();
       s->vipc_client->connected = false;
     }
   }
   started_prev = s->scene.started;
 }
 
+static void update_extras(UIState *s)
+{
+   UIScene &scene = s->scene;
+   SubMaster &sm = *(s->sm);
+
+   if(sm.updated("carControl"))
+    scene.car_control = sm["carControl"].getCarControl();
+
+
+   if(sm.updated("liveParameters"))
+    scene.live_params = sm["liveParameters"].getLiveParameters();
+
+   if(s->awake && s->status != STATUS_OFFROAD)
+   {
+        int touch_x = -1, touch_y = -1;
+        int touched = touch_poll(&(s->touch), &touch_x, &touch_y, 0);
+        dashcam(s, touch_x, touch_y);
+   }
+}
+
 
 QUIState::QUIState(QObject *parent) : QObject(parent) {
+  ui_state.sound = std::make_unique<Sound>();
   ui_state.sm = std::make_unique<SubMaster, const std::initializer_list<const char *>>({
     "modelV2", "controlsState", "liveCalibration", "radarState", "deviceState", "liveLocationKalman",
     "pandaState", "carParams", "driverState", "driverMonitoringState", "sensorEvents", "carState", "ubloxGnss",
 #ifdef QCOM2
     "roadCameraState",
 #endif
-  });
+    "carControl", "gpsLocationExternal", "liveParameters"});
 
   ui_state.fb_w = vwp_w;
   ui_state.fb_h = vwp_h;
   ui_state.scene.started = false;
+  ui_state.status = STATUS_OFFROAD;
   ui_state.last_frame = nullptr;
   ui_state.wide_camera = false;
 
@@ -309,6 +393,8 @@ QUIState::QUIState(QObject *parent) : QObject(parent) {
   timer = new QTimer(this);
   QObject::connect(timer, &QTimer::timeout, this, &QUIState::update);
   timer->start(0);
+
+  touch_init(&(ui_state.touch));
 }
 
 void QUIState::update() {
@@ -316,6 +402,8 @@ void QUIState::update() {
   update_sockets(&ui_state);
   update_state(&ui_state);
   update_status(&ui_state);
+  update_extras(&ui_state);
+  update_alert(&ui_state);
   update_vision(&ui_state);
 
   if (ui_state.scene.started != started_prev) {
@@ -326,6 +414,10 @@ void QUIState::update() {
     // This puts visionIPC in charge of update frequency, reducing video latency
     timer->start(ui_state.scene.started ? 0 : 1000 / UI_FREQ);
   }
+
+  // scale volume with speed
+  QUIState::ui_state.sound->volume = util::map_val(ui_state.scene.car_state.getVEgo(), 0.f, 20.f,
+                                                   Hardware::MIN_VOLUME, Hardware::MAX_VOLUME);
 
   watchdog_kick();
   emit uiUpdate(ui_state);

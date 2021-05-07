@@ -326,7 +326,8 @@ void clear_locks() {
 } // namespace
 
 int main(int argc, char** argv) {
-  setpriority(PRIO_PROCESS, 0, -20);
+
+  setpriority(PRIO_PROCESS, 0, -12);
 
   clear_locks();
 
