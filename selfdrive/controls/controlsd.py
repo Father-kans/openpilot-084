@@ -331,7 +331,7 @@ class Controls:
         curv = curv[5:TRAJECTORY_SIZE - 10]
         a_y_max = 2.975 - v_ego * 0.0375  # ~1.85 @ 75mph, ~2.6 @ 25mph
         v_curvature = np.sqrt(a_y_max / np.clip(np.abs(curv), 1e-4, None))
-        model_speed = np.mean(v_curvature) * 0.945
+        model_speed = np.mean(v_curvature) * 0.935
 
         if model_speed < v_ego:
           self.curve_speed_ms = float(max(model_speed, 32. * CV.KPH_TO_MS))
@@ -446,10 +446,10 @@ class Controls:
     #sr = max(params.steerRatio, 0.1)
 
     if ntune_isEnabled('useLiveSteerRatio'):
-      sr = max(self.sm['liveParameters'].steerRatio, 0.1)
+      sr = max(params.steerRatio, 0.1)
     else:
       if self.CP.carName in [CAR.VOLT]:
-        sr = interp(abs(self.angle_steers_des), [5., 35.], [13.5, 17.7])
+        sr = interp(abs(self.angle_steers_des), [4.5, 30.], [14.5, 18.2])
       else:
         sr = max(ntune_get('steerRatio'), 0.1)
 
