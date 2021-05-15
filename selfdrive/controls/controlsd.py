@@ -10,7 +10,7 @@ from common.realtime import sec_since_boot, config_realtime_process, Priority, R
 from common.profiler import Profiler
 from common.params import Params, put_nonblocking
 import cereal.messaging as messaging
-from selfdrive.car.gm.values import CAR
+# from selfdrive.car.gm.values import CAR
 from selfdrive.config import Conversions as CV
 from selfdrive.swaglog import cloudlog
 from selfdrive.boardd.boardd import can_list_to_can_capnp
@@ -448,10 +448,7 @@ class Controls:
     if ntune_isEnabled('useLiveSteerRatio'):
       sr = max(params.steerRatio, 0.1)
     else:
-      if self.CP.carName in [CAR.VOLT]:
-        sr = interp(abs(self.angle_steers_des), [4.5, 30.], [14.5, 18.2])
-      else:
-        sr = max(ntune_get('steerRatio'), 0.1)
+      sr = max(ntune_get('steerRatio'), 0.1)
 
     self.VM.update_params(x, sr)
 
