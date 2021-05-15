@@ -70,7 +70,7 @@ class CarInterface(CarInterfaceBase):
     # or camera is on powertrain bus (LKA cars without ACC).
     ret.enableCamera = is_ecu_disconnected(fingerprint[0], FINGERPRINTS, ECU_FINGERPRINT, candidate, Ecu.fwdCamera) or has_relay
     ret.openpilotLongitudinalControl = ret.enableCamera
-    tire_stiffness_factor = 0.7444  # not optimized yet
+    tire_stiffness_factor = 0.8  # not optimized yet
 
     # Start with a baseline lateral tuning for all GM vehicles. Override tuning as needed in each model section below.
     ret.minSteerSpeed = 7 * CV.MPH_TO_MS
@@ -88,9 +88,9 @@ class CarInterface(CarInterfaceBase):
       ret.steerRatio = 15.7
       ret.steerRatioRear = 0.
       ret.centerToFront = ret.wheelbase * 0.4  #  wild guess
-      ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.17], [0.0414]]
-      ret.lateralTuning.pid.kf = 0.00007   # full torque for 20 deg at 80mph means 0.00007818594
-      ret.steerRateCost = 0.45
+      ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.17], [0.0614]]
+      ret.lateralTuning.pid.kf = 0.00008   # full torque for 20 deg at 80mph means 0.00007818594
+      ret.steerRateCost = 0.56
       ret.steerActuatorDelay = 0.2  # Default delay, not measured yet	  
 
     elif candidate == CAR.MALIBU:
@@ -144,13 +144,24 @@ class CarInterface(CarInterfaceBase):
     ret.tireStiffnessFront, ret.tireStiffnessRear = scale_tire_stiffness(ret.mass, ret.wheelbase, ret.centerToFront,
                                                                          tire_stiffness_factor=tire_stiffness_factor)
 
-    ret.longitudinalTuning.kpBP = [5., 35.]
-    ret.longitudinalTuning.kpV = [2.4, 1.5]
-    ret.longitudinalTuning.kiBP = [0.]
-    ret.longitudinalTuning.kiV = [0.36]
+    ret.longitudinalTuning.kf = 0.3
+    ret.gasMaxBP = [0.]
+    ret.gasMaxV = [0.5]
 
     ret.stoppingControl = True
-    ret.startAccel = 0.8
+
+
+    ret.longitudinalTuning.deadzoneBP = [0., 8.05]
+    ret.longitudinalTuning.deadzoneV = [.0, .14]
+
+    ret.longitudinalTuning.kpBP = [0., 5., 10., 20.]
+    ret.longitudinalTuning.kpV = [1.8, 2.7, 4.0, 3.0]
+    ret.longitudinalTuning.kiBP = [0., 3., 7., 12., 20., 27.]
+    ret.longitudinalTuning.kiV = [.05, .07, .09, .15, .13, .1]
+
+    ret.stoppingBrakeRate = 0.1 # reach stopping target smoothly
+    ret.startingBrakeRate = 2.0 # release brakes fast
+    ret.startAccel = 1.2 # Accelerate from 0 faster
 
     ret.steerLimitTimer = 4.4
     ret.radarTimeStep = 0.0667  # GM radar runs at 15Hz instead of standard 20Hz
