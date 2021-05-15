@@ -103,7 +103,7 @@ class LateralPlanner():
     self.sR_delay_counter += 1
     if self.sR_delay_counter % 100 == 0:
       if self.v_ego_ed < v_ego:
-        VM.sR = interp(v_ego, [11.2, 22.5], [14.5, 18.2])
+        VM.sR = interp(v_ego, [8.3, 22.5], [14.5, 18.2])
       self.v_ego_ed = v_ego
 
     md = sm['modelV2']
