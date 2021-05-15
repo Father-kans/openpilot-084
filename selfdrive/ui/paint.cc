@@ -225,14 +225,15 @@ static void bb_ui_draw_basic_info(UIState *s)
     nvgTextAlign(s->vg, NVG_ALIGN_LEFT | NVG_ALIGN_MIDDLE);
     ui_draw_text(s, x, y, str, 25 * 2.5, textColor2, "sans-semibold");
     y += height+15;
+    y += height;
+    y += height + 35;
 
     snprintf(str, sizeof(str), "GPS: %.2fm", s->scene.gpsAccuracy);
-    ui_draw_text(s, x, y, str, 25 * 2.5, textColor, "sans-regular");
+    ui_draw_text(s, x-200, y, str, 25 * 2.5, textColor, "sans-regular");
     y += height;
 
     snprintf(str, sizeof(str), "Satellite: %d", s->scene.satelliteCount);
-    ui_draw_text(s, x, y, str, 25 * 2.5, textColor, "sans-regular");
-    y += height;
+    ui_draw_text(s, x-200, y, str, 25 * 2.5, textColor, "sans-regular");
     y += height;
 
     snprintf(str, sizeof(str), "Steer Angle: %.1f°", s->scene.controls_state.getAngleSteers());
@@ -248,7 +249,7 @@ static void bb_ui_draw_basic_info(UIState *s)
     y += height;
 
     if (scene->lead_data[0].getStatus()) {
-      snprintf(str, sizeof(str), "Lead Car: %d m", (int)scene->lead_data[0].getDRel());
+      snprintf(str, sizeof(str), "Front Car: %d m", (int)scene->lead_data[0].getDRel());
     } else {
       snprintf(str, sizeof(str), "앞차:--");
     }
@@ -280,7 +281,7 @@ static void bb_ui_draw_debug(UIState *s)
     const NVGcolor textColor = COLOR_WHITE;
     const NVGcolor textColor2 = COLOR_GREEN_ALPHA(255);
 
-    snprintf(str, sizeof(str), "State: %s", long_state[longControlState]);
+    snprintf(str, sizeof(str), "LongCtrl: %s", long_state[longControlState]);
     ui_draw_text(s, text_x, y, str, 25 * 2.5, textColor, "sans-regular");
 
     y += height;
@@ -737,7 +738,7 @@ void ui_nvg_init(UIState *s) {
   std::vector<std::pair<const char *, const char *>> images = {
     {"wheel", "../assets/img_chffr_wheel.png"},
     {"driver_face", "../assets/img_driver_face.png"},
-	{"brake", "../assets/img_brake_disc.png"},
+    {"brake", "../assets/img_brake_disc.png"},
   };
   for (auto [name, file] : images) {
     s->images[name] = nvgCreateImage(s->vg, file, 1);

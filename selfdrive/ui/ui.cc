@@ -401,8 +401,8 @@ void QUIState::update() {
   update_params(&ui_state);
   update_sockets(&ui_state);
   update_state(&ui_state);
-  update_status(&ui_state);
   update_extras(&ui_state);
+  update_status(&ui_state);
   update_alert(&ui_state);
   update_vision(&ui_state);
 
