@@ -536,8 +536,6 @@ struct ControlsState @0x97ff69c53601abf1 {
 
   angleSteers @61 :Float32;
 
-  longPlanSource @66 :UInt8;
-
   lateralControlState :union {
     indiState @52 :LateralINDIState;
     pidState @53 :LateralPIDState;
