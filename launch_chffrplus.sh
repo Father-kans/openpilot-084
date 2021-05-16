@@ -12,7 +12,8 @@ if [ ! -f "/data/openpilot/installer/boot_finish" ]; then
   cp -f /data/openpilot/installer/spinner /data/openpilot/selfdrive/ui/qt/
   chmod 744 /system/media/bootanimation.zip
   chmod 700 /data/openpilot/selfdrive/ui/qt/spinner
-  mount -o ro,remount /system
+  touch /data/openpilot/installer/boot_finish
+
 elif [ "$(getprop persist.sys.locale)" != "ko-KR" ]; then
 
   setprop persist.sys.locale ko-KR
@@ -23,7 +24,8 @@ elif [ "$(getprop persist.sys.locale)" != "ko-KR" ]; then
   sleep 2
   reboot
 else
-  touch /data/openpilot/installer/boot_finish
+  chmod 644 /data/openpilot/installer/boot_finish
+  mount -o ro,remount /system
 fi
 
 if [ -z "$BASEDIR" ]; then
