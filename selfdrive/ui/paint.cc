@@ -213,8 +213,7 @@ static void bb_ui_draw_basic_info(UIState *s)
                                                         scene->controls_state.getSteerRateCost(),
                                                         scene->controls_state.getSteerActuatorDelay(),
                                                         scene->live_params.getAngleOffsetDeg(),
-                                                        scene->live_params.getAngleOffsetAverageDeg()
-                                                        );
+                                                        scene->live_params.getAngleOffsetAverageDeg());
 
     int x = s->viz_rect.x + 210;
     int y = s->viz_rect.y + 35;
@@ -224,9 +223,11 @@ static void bb_ui_draw_basic_info(UIState *s)
 
     nvgTextAlign(s->vg, NVG_ALIGN_LEFT | NVG_ALIGN_MIDDLE);
     ui_draw_text(s, x, y, str, 25 * 2.5, textColor2, "sans-semibold");
-    y += height+15;
     y += height;
-    y += height + 35;
+    y += height;
+    y += height;
+    y += height;
+    y += height;
 
     snprintf(str, sizeof(str), "GPS: %.2fm", s->scene.gpsAccuracy);
     ui_draw_text(s, x-200, y, str, 25 * 2.5, textColor, "sans-regular");
