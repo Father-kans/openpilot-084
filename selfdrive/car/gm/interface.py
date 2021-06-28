@@ -13,11 +13,10 @@ FOLLOW_AGGRESSION = 0.15 # (Acceleration/Decel aggression) Lower is more aggress
 ButtonType = car.CarState.ButtonEvent.Type
 EventName = car.CarEvent.EventName
 
-
 class CarInterface(CarInterfaceBase):
   @staticmethod
   def compute_gb(accel, speed):
-  # Ripped from compute_gb_honda in Honda's interface.py. Works well off shelf but may need more tuning
+  	# Ripped from compute_gb_honda in Honda's interface.py. Works well off shelf but may need more tuning
     creep_brake = 0.0
     creep_speed = 2.68
     creep_brake_value = 0.10
@@ -78,8 +77,8 @@ class CarInterface(CarInterfaceBase):
     ret.lateralTuning.pid.kiBP, ret.lateralTuning.pid.kpBP = [[0.], [0.]]
     ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.192], [0.021]]
     ret.lateralTuning.pid.kf = 0.00006   # full torque for 20 deg at 80mph means 0.00007818594
-    ret.steerRateCost = 0.45
-    ret.steerActuatorDelay = 0.125  # Default delay, not measured yet
+    ret.steerRateCost = 0.465
+    ret.steerActuatorDelay = 0.3  # Default delay, not measured yet
 
     if candidate == CAR.VOLT:
       # supports stop and go, but initial engage must be above 18mph (which include conservatism)
@@ -91,8 +90,8 @@ class CarInterface(CarInterfaceBase):
       ret.centerToFront = ret.wheelbase * 0.4  #  wild guess
       ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.192], [0.021]]
       ret.lateralTuning.pid.kf = 0.00006   # full torque for 20 deg at 80mph means 0.00007818594
-      ret.steerRateCost = 0.45
-      ret.steerActuatorDelay = 0.125  # Default delay, not measured yet	  
+      ret.steerRateCost = 0.465
+      ret.steerActuatorDelay = 0.2  # Default delay, not measured yet	  
 
     elif candidate == CAR.MALIBU:
       # supports stop and go, but initial engage must be above 18mph (which include conservatism)
@@ -144,30 +143,25 @@ class CarInterface(CarInterfaceBase):
     # mass and CG position, so all cars will have approximately similar dyn behaviors
     ret.tireStiffnessFront, ret.tireStiffnessRear = scale_tire_stiffness(ret.mass, ret.wheelbase, ret.centerToFront,
                                                                          tire_stiffness_factor=tire_stiffness_factor)
-    
     ret.gasMaxBP = [0.]
     ret.gasMaxV = [0.5]
-#
-#    ret.gasMaxBP = [0., 10. * CV.KPH_TO_MS, 20. * CV.KPH_TO_MS, 50. * CV.KPH_TO_MS, 70. * CV.KPH_TO_MS, 120. * CV.KPH_TO_MS]
-#    ret.gasMaxV = [0.4, 0.3, 0.24, 0.165, 0.13, 0.11]
 
     ret.stoppingControl = True
 
-    ret.longitudinalTuning.deadzoneBP = [0., 28.05]
-    ret.longitudinalTuning.deadzoneV = [.0, .014]
 
-    ret.longitudinalTuning.kpBP = [0., 5., 10., 20., 28.]
-    ret.longitudinalTuning.kpV = [1.8, 2.7, 4.0, 3.0, 2.0]
-    ret.longitudinalTuning.kiBP = [0., 27.]
-    ret.longitudinalTuning.kiV = [0.05, 0.01]
-    ret.longitudinalTuning.kfBP = [13.5, 28.]
-    ret.longitudinalTuning.kfV = [0.5, 0.2]
+    ret.longitudinalTuning.deadzoneBP = [0., 8.05]
+    ret.longitudinalTuning.deadzoneV = [.0, .14]
 
-    ret.stoppingBrakeRate = 0.15 # reach stopping target smoothly
-    ret.startingBrakeRate = 1.0 # release brakes fast
+    ret.longitudinalTuning.kpBP = [0., 5., 10., 20.]
+    ret.longitudinalTuning.kpV = [1.8, 2.7, 4.0, 3.0]
+    ret.longitudinalTuning.kiBP = [0., 3., 7., 12., 20., 27.]
+    ret.longitudinalTuning.kiV = [.05, .07, .09, .15, .13, .1]
+
+    ret.stoppingBrakeRate = 0.1 # reach stopping target smoothly
+    ret.startingBrakeRate = 2.0 # release brakes fast
     ret.startAccel = 1.2 # Accelerate from 0 faster
 
-    ret.steerLimitTimer = 2.5
+    ret.steerLimitTimer = 0.4
     ret.radarTimeStep = 0.0667  # GM radar runs at 15Hz instead of standard 20Hz
 
     return ret

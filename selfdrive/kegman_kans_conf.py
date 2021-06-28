@@ -156,7 +156,7 @@ class kegman_kans_conf():
     else:  # add "accelerationmode":"0" like as bellow, 1st word on the 2nd line
       self.config = {"lastTrMode":"2", "battChargeMin":"60", "battChargeMax":"75", "wheelTouchSeconds":"18000", \
                      "accelerationMode":"0", "battPercOff":"80", "carVoltageMinEonShutdown":"12000", \
-                     "brakeStoppingTarget":"0.5", "tuneGernby":"1", "AutoHold":"1", "steerLimitTimer":"2.5", \
+                     "brakeStoppingTarget":"0.5", "tuneGernby":"1", "AutoHold":"1", "steerLimitTimer":"5.7", \
                      "Kp":"0.192", "Ki":"0.021", "Kd":"0.00032", "Kf":"0.00006", "liveParams":"1", "deadzone":"0.0", \
                      "1barBP0":"-0.3", "2barBP0":"-0.2", "3barBP0":"-0.1", \
                      "1barBP1":"2.0", "2barBP1":"2.25", "3barBP1":"4.1", \
