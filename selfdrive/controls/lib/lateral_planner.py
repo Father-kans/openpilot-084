@@ -4,8 +4,7 @@ import numpy as np
 from common.params import Params
 from common.realtime import sec_since_boot, DT_MDL
 from common.numpy_fast import interp, clip
-from selfdrive.car.gm.values import CAR
-from selfdrive.ntune import ntune_get, ntune_isEnabled
+from selfdrive.ntune import ntune_get
 from selfdrive.swaglog import cloudlog
 from selfdrive.controls.lib.lateral_mpc import libmpc_py
 from selfdrive.controls.lib.drive_helpers import MPC_COST_LAT, MPC_N, CAR_ROTATION_RADIUS
@@ -69,10 +68,6 @@ class LateralPlanner():
     self.t_idxs = np.arange(TRAJECTORY_SIZE)
     self.y_pts = np.zeros(TRAJECTORY_SIZE)
 
-    self.steerRatio = 0.0
-
-#    self.sR_delay_counter = 0
-#    self.v_ego_ed = 0.0
   def setup_mpc(self):
     self.libmpc = libmpc_py.libmpc
     self.libmpc.init()
@@ -89,22 +84,10 @@ class LateralPlanner():
     self.desired_curvature_rate = 0.0
     self.safe_desired_curvature_rate = 0.0
 
-  def update(self, sm, CP):#, VM):
+  def update(self, sm, CP):
     v_ego = sm['carState'].vEgo
     active = sm['controlsState'].active
     measured_curvature = sm['controlsState'].curvature
-#
-#    # Update vehicle model
-#    x = max(sm['liveParameters'].stiffnessFactor, 0.1)
-#    sr = max(sm['liveParameters'].steerRatio, 0.1)
-#    VM.update_params(x, sr)
-
-# add interpolated sR by GGamjang Niro
-#    self.sR_delay_counter += 1
-#    if self.sR_delay_counter % 100 == 0:
-#      if self.v_ego_ed < v_ego:
-#        VM.sR = interp(v_ego, [8.3, 22.5], [14.5, 18.2])
-#      self.v_ego_ed = v_ego
 
     md = sm['modelV2']
 
@@ -248,7 +231,7 @@ class LateralPlanner():
     else:
       self.solution_invalid_cnt = 0
 
-  def publish(self, sm, pm): #, VM):
+  def publish(self, sm, pm):
     plan_solution_valid = self.solution_invalid_cnt < 2
     plan_send = messaging.new_message('lateralPlan')
     plan_send.valid = sm.all_alive_and_valid(service_list=['carState', 'controlsState', 'modelV2'])
@@ -262,7 +245,7 @@ class LateralPlanner():
     plan_send.lateralPlan.rawCurvatureRate = float(self.desired_curvature_rate)
     plan_send.lateralPlan.curvature = float(self.safe_desired_curvature)
     plan_send.lateralPlan.curvatureRate = float(self.safe_desired_curvature_rate)
-#    plan_send.lateralPlan.paramsValid = bool(sm['liveParameters'].valid)
+
     plan_send.lateralPlan.mpcSolutionValid = bool(plan_solution_valid)
 
     plan_send.lateralPlan.desire = self.desire
