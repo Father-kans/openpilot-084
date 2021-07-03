@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
 from cereal import car
-from cereal import log
 from common.numpy_fast import interp
 from selfdrive.config import Conversions as CV
 from selfdrive.car.gm.values import CAR, Ecu, ECU_FINGERPRINT, CruiseButtons, \
@@ -16,7 +15,7 @@ EventName = car.CarEvent.EventName
 class CarInterface(CarInterfaceBase):
   @staticmethod
   def compute_gb(accel, speed):
-  	# Ripped from compute_gb_honda in Honda's interface.py. Works well off shelf but may need more tuning
+  # Ripped from compute_gb_honda in Honda's interface.py. Works well off shelf but may need more tuning
     creep_brake = 0.0
     creep_speed = 2.68
     creep_brake_value = 0.10
@@ -70,28 +69,25 @@ class CarInterface(CarInterfaceBase):
     # or camera is on powertrain bus (LKA cars without ACC).
     ret.enableCamera = is_ecu_disconnected(fingerprint[0], FINGERPRINTS, ECU_FINGERPRINT, candidate, Ecu.fwdCamera) or has_relay
     ret.openpilotLongitudinalControl = ret.enableCamera
-    tire_stiffness_factor = 0.8  # not optimized yet
+    tire_stiffness_factor = 0.9  # not optimized yet
 
     # Start with a baseline lateral tuning for all GM vehicles. Override tuning as needed in each model section below.
     ret.minSteerSpeed = 7 * CV.MPH_TO_MS
     ret.lateralTuning.pid.kiBP, ret.lateralTuning.pid.kpBP = [[0.], [0.]]
     ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.192], [0.021]]
-    ret.lateralTuning.pid.kf = 0.00006   # full torque for 20 deg at 80mph means 0.00007818594
-    ret.steerRateCost = 0.465
-    ret.steerActuatorDelay = 0.3  # Default delay, not measured yet
+    ret.lateralTuning.pid.kf = 0.00007  # full torque for 20 deg at 80mph means 0.00007818594
+    ret.steerRateCost = 0.35
+    ret.steerActuatorDelay = 0.075  # Default delay, not measured yet	  
 
     if candidate == CAR.VOLT:
       # supports stop and go, but initial engage must be above 18mph (which include conservatism)
       ret.minEnableSpeed = -1 * CV.MPH_TO_MS
       ret.mass = 1607. + STD_CARGO_KG
       ret.wheelbase = 2.69
-      ret.steerRatio = 15.7
+      ret.steerRatio = 15.07
       ret.steerRatioRear = 0.
       ret.centerToFront = ret.wheelbase * 0.4  #  wild guess
-      ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.192], [0.021]]
-      ret.lateralTuning.pid.kf = 0.00006   # full torque for 20 deg at 80mph means 0.00007818594
-      ret.steerRateCost = 0.465
-      ret.steerActuatorDelay = 0.2  # Default delay, not measured yet	  
+
 
     elif candidate == CAR.MALIBU:
       # supports stop and go, but initial engage must be above 18mph (which include conservatism)
@@ -143,25 +139,21 @@ class CarInterface(CarInterfaceBase):
     # mass and CG position, so all cars will have approximately similar dyn behaviors
     ret.tireStiffnessFront, ret.tireStiffnessRear = scale_tire_stiffness(ret.mass, ret.wheelbase, ret.centerToFront,
                                                                          tire_stiffness_factor=tire_stiffness_factor)
-    ret.gasMaxBP = [0.]
-    ret.gasMaxV = [0.5]
+
+    ret.longitudinalTuning.kpBP = [0., 5., 10., 20., 33]
+    ret.longitudinalTuning.kpV = [1.8, 2.3, 2.0, 1.8, 1.5]
+
+    ret.longitudinalTuning.kiBP = [0., 7., 13.8, 22., 33.]
+    ret.longitudinalTuning.kiV = [.38, .36, .34, .32, .3]
+    ret.longitudinalTuning.kfBP = [13,8, 27.7]
+    ret.longitudinalTuning.kfV = [1.5, 1.2]
+
+    ret.brakeMaxBP = [0., 19.5, 33.]
+    ret.brakeMaxV = [1.35, 1., 0.6]
 
     ret.stoppingControl = True
-
-
-    ret.longitudinalTuning.deadzoneBP = [0., 8.05]
-    ret.longitudinalTuning.deadzoneV = [.0, .14]
-
-    ret.longitudinalTuning.kpBP = [0., 5., 10., 20.]
-    ret.longitudinalTuning.kpV = [1.8, 2.7, 4.0, 3.0]
-    ret.longitudinalTuning.kiBP = [0., 3., 7., 12., 20., 27.]
-    ret.longitudinalTuning.kiV = [.05, .07, .09, .15, .13, .1]
-
-    ret.stoppingBrakeRate = 0.1 # reach stopping target smoothly
-    ret.startingBrakeRate = 2.0 # release brakes fast
     ret.startAccel = 1.2 # Accelerate from 0 faster
-
-    ret.steerLimitTimer = 0.4
+    ret.steerLimitTimer = 0.7
     ret.radarTimeStep = 0.0667  # GM radar runs at 15Hz instead of standard 20Hz
 
     return ret
@@ -223,7 +215,10 @@ class CarInterface(CarInterfaceBase):
       events.add(EventName.belowEngageSpeed)
     if self.CS.park_brake:
       events.add(EventName.parkBrake)
-
+    if self.CS.pcm_acc_status == AccState.FAULTED:
+      events.add(EventName.accFaulted)
+    if ret.vEgo < self.CP.minSteerSpeed:
+      events.add(car.CarEvent.EventName.belowSteerSpeed)
     if self.CS.autoHoldActivated:
       events.add(car.CarEvent.EventName.autoHoldActivated)
 
