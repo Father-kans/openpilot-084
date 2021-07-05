@@ -22,7 +22,7 @@ class CarState(CarStateBase):
     self.distance_button = 0
     self.follow_level = 2
     self.lkMode = True
-#Autohold
+#bellow 5lines for Autohold
     self.autoHold = False
     self.autoHoldActive = False
     self.autoHoldActivated = False
@@ -103,7 +103,7 @@ class CarState(CarStateBase):
 # bellow line for Brake Light	
     ret.brakeLights = ch_cp.vl["EBCMFrictionBrakeStatus"]["FrictionBrakePressure"] != 0 or ret.brakePressed
 
-# belows are for GM's Autohold
+## bellow 7 Lines are for Autohold
     if kegman_kans.conf['AutoHold'] == "1":
       self.autoHold = True
     else:
